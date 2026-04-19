@@ -49,21 +49,59 @@ def create_map(lang):
         m = folium.Map(location=[35.6895, 139.6917], zoom_start=12)  # OpenStreetMap - Tiếng Nhật
     return draw_routes(m, lang)
 
-# --- GIAO DIỆN ĐĂNG NHẬP ---
+# --- GIAO DIỆN ĐĂNG NHẬP VÀ ĐĂNG KÝ ---
 if not st.session_state.token:
-    st.sidebar.title("🔐 Đăng nhập hệ thống")
-    u = st.sidebar.text_input("Username")
-    p = st.sidebar.text_input("Password", type="password")
-    if st.sidebar.button("Đăng nhập", use_container_width=True):
-        res = requests.post(f"{API_BASE}/auth/login", data={"username": u, "password": p})
-        if res.status_code == 200:
-            data = res.json()
-            st.session_state.token = data["access_token"]
-            st.session_state.role = data.get("role", "user")
-            st.rerun()
-        else:
-            st.sidebar.error("Sai tài khoản hoặc mật khẩu!")
-    st.info("💡 Hãy đăng nhập từ thanh bên trái để bắt đầu tìm đường.")
+    st.sidebar.title("🔐 Hệ thống xác thực")
+    
+    # Tab chuyển đổi giữa Đăng nhập và Đăng ký
+    tab_login, tab_register = st.sidebar.tabs(["Đăng nhập", "Đăng ký"])
+    
+    with tab_login:
+        st.write("### Đăng nhập tài khoản")
+        u = st.text_input("Username", key="login_username")
+        p = st.text_input("Password", type="password", key="login_password")
+        if st.button("Đăng nhập", use_container_width=True, key="btn_login"):
+            if u and p:
+                res = requests.post(f"{API_BASE}/auth/login", data={"username": u, "password": p})
+                if res.status_code == 200:
+                    data = res.json()
+                    st.session_state.token = data["access_token"]
+                    st.session_state.role = data.get("role", "user")
+                    st.success("✅ Đăng nhập thành công!")
+                    st.rerun()
+                else:
+                    st.error("❌ Sai tài khoản hoặc mật khẩu!")
+            else:
+                st.warning("⚠️ Vui lòng nhập tài khoản và mật khẩu!")
+    
+    with tab_register:
+        st.write("### Tạo tài khoản mới")
+        new_username = st.text_input("Tên đăng nhập", key="register_username")
+        new_password = st.text_input("Mật khẩu", type="password", key="register_password")
+        confirm_password = st.text_input("Xác nhận mật khẩu", type="password", key="confirm_password")
+        
+        if st.button("Đăng ký", use_container_width=True, key="btn_register"):
+            if not new_username or not new_password or not confirm_password:
+                st.warning("⚠️ Vui lòng điền đầy đủ thông tin!")
+            elif new_password != confirm_password:
+                st.error("❌ Mật khẩu xác nhận không khớp!")
+            elif len(new_password) < 6:
+                st.warning("⚠️ Mật khẩu phải có ít nhất 6 ký tự!")
+            else:
+                res = requests.post(
+                    f"{API_BASE}/auth/register",
+                    json={"username": new_username, "password": new_password}
+                )
+                if res.status_code == 201:
+                    st.success("✅ Đăng ký thành công! Vui lòng đăng nhập.")
+                    st.info("💡 Chuyển sang tab 'Đăng nhập' để đăng nhập với tài khoản mới.")
+                elif res.status_code == 400:
+                    st.error("❌ Tên đăng nhập đã tồn tại! Vui lòng chọn tên khác.")
+                else:
+                    error_msg = res.json().get("detail", "Lỗi không xác định")
+                    st.error(f"❌ Lỗi: {error_msg}")
+    
+    st.info("💡 Hãy đăng nhập hoặc đăng ký từ thanh bên trái để bắt đầu tìm đường.")
     
 # --- GIAO DIỆN CHÍNH SAU KHI ĐĂNG NHẬP ---
 else:
