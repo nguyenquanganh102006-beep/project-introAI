@@ -1,5 +1,0 @@
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary # Driver cho PostgreSQL
-python-dotenv   # Thư viện để đọc file .env
