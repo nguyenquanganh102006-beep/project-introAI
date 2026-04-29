@@ -83,7 +83,7 @@ def _build_graph(db: Session, priority: Priority) -> Dict[str, List[Tuple]]:
             continue
 
         if priority == Priority.distance:
-            w = e.distance_km +(0.1 if e.is_transfer else 0)
+            w = e.distance_km +(1 if e.is_transfer else 0)
         else:  # transfers — đổi tàu tính thêm penalty cao
             penalty = 1000
             w = e.distance_km + (penalty if e.is_transfer else 0)
